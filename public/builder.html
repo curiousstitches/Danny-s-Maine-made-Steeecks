@@ -189,7 +189,9 @@
     .side-rail{ width:52px; }
     .rail-tab{ font-size:0.58rem; padding:0.55rem 0.2rem; }
     .rail-tab .rail-icon{ font-size:1.1rem; }
-    .builder-toolbar .disclaimer-note{ display:none; }
+    .builder-toolbar .disclaimer-note{
+      min-width:100%; text-align:center; order:3; font-size:0.7rem; margin-top:0.1rem;
+    }
     .builder-toolbar h1{ font-size:0.92rem; }
     .panel-drawer{ width:min(260px, 74vw); }
     .panel-drawer.side-left{ left:52px; }
@@ -257,6 +259,17 @@
     <div class="panel-drawer side-left open" id="panel-wood">
       <button class="panel-close" data-close-panel>&times;</button>
       <h2>Wood</h2>
+      <div class="panel-section">
+        <h3>Quick start</h3>
+        <div class="paint-quick-actions" id="presetButtons">
+          <button class="paint-quick-btn" data-preset="hiking" type="button">Hiking Staff</button>
+          <button class="paint-quick-btn" data-preset="cane" type="button">Cane</button>
+          <button class="paint-quick-btn" data-preset="kids" type="button">Kids</button>
+          <button class="paint-quick-btn" data-preset="poker" type="button">Fire Poker</button>
+        </div>
+        <p class="paint-hint">Loads sensible defaults to start from — tweak anything after.</p>
+      </div>
+      <h3>Or pick a wood directly</h3>
       <div class="wood-swatches" id="woodSwatches"></div>
     </div>
 
@@ -423,13 +436,13 @@
 
   const WOODS = [
     { id: 'oak', name: 'Oak', bark: 'images/wood/bark-oak.webp', polishColor: 0xb8905a, available: true },
-    { id: 'maple', name: 'Maple', bark: 'images/wood/bark-maple.webp', polishColor: 0xe0c99a, available: false },
-    { id: 'birch', name: 'Birch', bark: 'images/wood/bark-birch.webp', polishColor: 0xe8d9b8, available: false },
-    { id: 'ash', name: 'Ash', bark: 'images/wood/bark-ash.webp', polishColor: 0xd4b98a, available: false },
-    { id: 'cherry', name: 'Cherry', bark: 'images/wood/bark-cherry.webp', polishColor: 0x8b4a3a, available: false },
-    { id: 'black-walnut', name: 'Black Walnut', bark: 'images/wood/bark-black-walnut.webp', polishColor: 0x3f2a1c, available: false },
-    { id: 'white-pine', name: 'White Pine', bark: 'images/wood/bark-white-pine.webp', polishColor: 0xe8dcc0, available: false },
-    { id: 'eastern-white-cedar', name: 'Eastern White Cedar', bark: 'images/wood/bark-eastern-white-cedar.webp', polishColor: 0xb08050, available: false },
+    { id: 'maple', name: 'Maple', bark: 'images/wood/bark-maple.webp', polishColor: 0xe0c99a, available: true },
+    { id: 'birch', name: 'Birch', bark: 'images/wood/bark-birch.webp', polishColor: 0xe8d9b8, available: true },
+    { id: 'ash', name: 'Ash', bark: 'images/wood/bark-ash.webp', polishColor: 0xd4b98a, available: true },
+    { id: 'cherry', name: 'Cherry', bark: 'images/wood/bark-cherry.webp', polishColor: 0x8b4a3a, available: true },
+    { id: 'black-walnut', name: 'Black Walnut', bark: 'images/wood/bark-black-walnut.webp', polishColor: 0x3f2a1c, available: true },
+    { id: 'white-pine', name: 'White Pine', bark: 'images/wood/bark-white-pine.webp', polishColor: 0xe8dcc0, available: true },
+    { id: 'eastern-white-cedar', name: 'Eastern White Cedar', bark: 'images/wood/bark-eastern-white-cedar.webp', polishColor: 0xb08050, available: true },
   ];
 
   const PAINT_SEGMENTS = 24;
@@ -809,6 +822,7 @@
   });
 
   // ===== Stepper controls =====
+  const stepperSetters = {};
   function wireStepper(id, onChange){
     const el = document.getElementById(id);
     const options = el.dataset.options.split(',');
@@ -823,6 +837,13 @@
         onChange(options[idx]);
       });
     });
+    stepperSetters[id] = (value) => {
+      const newIdx = options.indexOf(value);
+      if (newIdx === -1) return;
+      idx = newIdx;
+      valueEl.textContent = labels[idx];
+      onChange(options[idx]);
+    };
   }
   wireStepper('textureStepper', (v) => { state.texture = v; rebuildStick(); });
   wireStepper('burntStepper', (v) => { state.burnt = v === 'yes'; rebuildStick(); updatePrice(); });
@@ -846,6 +867,46 @@
     document.getElementById('priceEstimate').textContent = `$${low}–$${high}`;
   }
   updatePrice();
+
+  // ===== Purpose-based presets =====
+  const PRESETS = {
+    hiking: { length: 58, bend: 15, woodId: 'oak', texture: 'sanded', grip: 'leather', tip: false, burnt: false, barkPercent: 0.4 },
+    cane: { length: 36, bend: -8, woodId: 'maple', texture: 'sanded', grip: 'none', tip: true, burnt: false, barkPercent: 0.15 },
+    kids: { length: 34, bend: 0, woodId: 'birch', texture: 'sanded', grip: 'none', tip: false, burnt: false, barkPercent: 0.5 },
+    poker: { length: 30, bend: 0, woodId: 'black-walnut', texture: 'rough', grip: 'none', tip: true, burnt: true, barkPercent: 0.2 },
+  };
+  document.querySelectorAll('#presetButtons .paint-quick-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = PRESETS[btn.dataset.preset];
+      if (!p) return;
+
+      const wood = WOODS.find(w => w.id === p.woodId);
+      if (wood && wood.available){
+        state.wood = wood;
+        document.querySelectorAll('.wood-swatch').forEach((el, i) => {
+          el.classList.toggle('active', WOODS[i].id === wood.id);
+        });
+      }
+
+      state.length = p.length;
+      document.getElementById('lengthAmount').value = p.length;
+      document.getElementById('lengthValue').textContent = p.length + '"';
+
+      state.bend = p.bend;
+      document.getElementById('bendAmount').value = p.bend;
+
+      state.barkMask = state.barkMask.map((_, i) => i < state.barkMask.length * p.barkPercent);
+      refreshPaintStripVisual();
+
+      stepperSetters['textureStepper'](p.texture);
+      stepperSetters['burntStepper'](p.burnt ? 'yes' : 'no');
+      stepperSetters['gripStepper'](p.grip);
+      stepperSetters['tipStepper'](p.tip ? 'yes' : 'no');
+
+      rebuildStick();
+      updatePrice();
+    });
+  });
 
   // ===== Save / Use design =====
   function barkPercent(){
