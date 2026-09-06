@@ -435,14 +435,14 @@
   });
 
   const WOODS = [
-    { id: 'oak', name: 'Oak', bark: 'images/wood/bark-oak.webp', polishColor: 0xb8905a, available: true },
-    { id: 'maple', name: 'Maple', bark: 'images/wood/bark-maple.webp', polishColor: 0xe0c99a, available: true },
-    { id: 'birch', name: 'Birch', bark: 'images/wood/bark-birch.webp', polishColor: 0xe8d9b8, available: true },
-    { id: 'ash', name: 'Ash', bark: 'images/wood/bark-ash.webp', polishColor: 0xd4b98a, available: true },
-    { id: 'cherry', name: 'Cherry', bark: 'images/wood/bark-cherry.webp', polishColor: 0x8b4a3a, available: true },
-    { id: 'black-walnut', name: 'Black Walnut', bark: 'images/wood/bark-black-walnut.webp', polishColor: 0x3f2a1c, available: true },
-    { id: 'white-pine', name: 'White Pine', bark: 'images/wood/bark-white-pine.webp', polishColor: 0xe8dcc0, available: true },
-    { id: 'eastern-white-cedar', name: 'Eastern White Cedar', bark: 'images/wood/bark-eastern-white-cedar.webp', polishColor: 0xb08050, available: true },
+    { id: 'oak', name: 'Oak', bark: 'images/wood/bark-oak.webp', polishColor: 0xb8905a, available: true, category: 'hardwood' },
+    { id: 'maple', name: 'Maple', bark: 'images/wood/bark-maple.webp', polishColor: 0xe0c99a, available: true, category: 'hardwood' },
+    { id: 'birch', name: 'Birch', bark: 'images/wood/bark-birch.webp', polishColor: 0xe8d9b8, available: true, category: 'hardwood' },
+    { id: 'ash', name: 'Ash', bark: 'images/wood/bark-ash.webp', polishColor: 0xd4b98a, available: true, category: 'hardwood' },
+    { id: 'cherry', name: 'Cherry', bark: 'images/wood/bark-cherry.webp', polishColor: 0x8b4a3a, available: true, category: 'hardwood' },
+    { id: 'black-walnut', name: 'Black Walnut', bark: 'images/wood/bark-black-walnut.webp', polishColor: 0x3f2a1c, available: true, category: 'hardwood' },
+    { id: 'white-pine', name: 'White Pine', bark: 'images/wood/bark-white-pine.webp', polishColor: 0xe8dcc0, available: true, category: 'softwood' },
+    { id: 'eastern-white-cedar', name: 'Eastern White Cedar', bark: 'images/wood/bark-eastern-white-cedar.webp', polishColor: 0xb08050, available: true, category: 'softwood' },
   ];
 
   const PAINT_SEGMENTS = 24;
@@ -785,6 +785,7 @@
       loadingEl.style.opacity = '1';
       refreshPaintStripVisual();
       rebuildStick();
+      updatePrice();
     });
     swatchWrap.appendChild(el);
   });
@@ -858,7 +859,8 @@
 
   // ===== Price estimate =====
   function updatePrice(){
-    let low = 35, high = 45;
+    let low = state.wood.category === 'softwood' ? 40 : 70;
+    let high = state.wood.category === 'softwood' ? 45 : 75;
     if (state.length > 60) { low += 5; high += 8; }
     if (state.grip !== 'none'){ low += 6; high += 10; }
     if (state.tip){ low += 5; high += 8; }
