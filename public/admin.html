@@ -229,6 +229,15 @@
       </tbody>
     </table>
 
+    <h2 style="font-family:'Fraunces', serif; font-size:1.3rem; margin-bottom:0.4rem; color:var(--walnut);">Saved Stick Builder designs</h2>
+    <p style="font-size:0.85rem; color:#8a7960; margin-bottom:1rem;">People who designed something but haven't ordered yet — worth a follow-up email.</p>
+    <table style="margin-bottom:2.6rem;">
+      <thead><tr><th>Ref Code</th><th>Wood</th><th>Bark %</th><th>Finish</th><th>Grip</th><th>Tip</th><th>Personalized</th><th>Est. Price</th><th>Date</th></tr></thead>
+      <tbody id="savedDesignsBody">
+        <tr><td colspan="9">Loading…</td></tr>
+      </tbody>
+    </table>
+
     <h2 style="font-family:'Fraunces', serif; font-size:1.3rem; margin-bottom:1rem; color:var(--walnut);">Registered customers</h2>
     <table>
       <thead><tr><th>Email</th><th>Signed up</th></tr></thead>
@@ -311,6 +320,11 @@
     const { data: orders, count: orderCount } = await supabase
       .from('custom_orders')
       .select('id, name, email, size, wood, notes, veteran_discount, created_at, recipient, height, purpose, bark_preference, bend_request, knots_limbs, wood_burning, finish_choice, grip_wrap, metal_tip, order_type, quoted_price, paid, paid_amount, paid_at', { count: 'exact' })
+      .order('created_at', { ascending: false });
+
+    const { data: savedDesigns } = await supabase
+      .from('saved_designs')
+      .select('ref_code, wood, bark_split, texture, burnt, grip, metal_tip, burn_text, est_price_low, est_price_high, created_at')
       .order('created_at', { ascending: false });
 
     const { count: soldCount } = await supabase
@@ -416,6 +430,25 @@
         ${hasDetails ? `<tr id="detail-${o.id}" class="hidden"><td colspan="9" style="background:var(--parchment); font-size:0.85rem;">${detailRows}${metalTipRow}</td></tr>` : ''}
       `;
       }).join('');
+    }
+
+    const savedBody = document.getElementById('savedDesignsBody');
+    if (!savedDesigns || savedDesigns.length === 0){
+      savedBody.innerHTML = '<tr><td colspan="9">No saved designs yet.</td></tr>';
+    } else {
+      savedBody.innerHTML = savedDesigns.map(d => `
+        <tr>
+          <td><strong>${d.ref_code}</strong></td>
+          <td>${d.wood}</td>
+          <td>${Math.round((d.bark_split || 0) * 100)}%</td>
+          <td>${d.texture}${d.burnt ? ', burnt' : ''}</td>
+          <td>${d.grip !== 'none' ? d.grip : '—'}</td>
+          <td>${d.metal_tip ? 'Yes' : '—'}</td>
+          <td>${d.burn_text ? `"${d.burn_text}"` : '—'}</td>
+          <td>$${d.est_price_low}–$${d.est_price_high}</td>
+          <td>${new Date(d.created_at).toLocaleDateString()}</td>
+        </tr>
+      `).join('');
     }
 
     const tbody = document.getElementById('userTableBody');
