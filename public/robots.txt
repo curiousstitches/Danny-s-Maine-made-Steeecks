@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /custom.html
+Disallow: /builder.html
+Disallow: /profile.html
+Disallow: /admin.html
+Disallow: /auth.html
+Allow: /
+
+Sitemap: https://steeecks-of-maine.com/sitemap.xml
