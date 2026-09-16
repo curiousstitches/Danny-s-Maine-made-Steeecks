@@ -121,6 +121,44 @@
   <p class="rings-subcaption" style="padding-bottom:3.5rem; opacity:0.85;">Prices shown are estimates. Final pricing depends on wood type, current availability, and shipping — always confirmed by email before payment.</p>
 </div>
 
+<section class="promo-banner bark-bg" style="text-align:center; padding:2.2rem 1.2rem;">
+  <div style="font-size:2.2rem; margin-bottom:0.4rem;">🎁</div>
+  <h2 style="font-family:'Fraunces', serif; color:var(--honey-bright); margin-bottom:0.5rem;">First 5 Orders Get a Free Surprise Steeeck</h2>
+  <p style="max-width:520px; margin:0 auto; opacity:0.9;">Order any piece of your choosing, and if you're one of the first 5 buyers, we'll add a second steeeck of our choosing to your package \u2014 completely free. Your name goes on our Thank You board below once your order's confirmed.</p>
+</section>
+
+<section class="explore" id="thankyou-board">
+  <div class="section-head">
+    <span class="eyebrow">Our First Customers</span>
+    <h2>Thank You Board</h2>
+    <p id="thankyouSubtext">Loading...</p>
+  </div>
+  <div id="thankyouList" style="max-width:480px; margin:0 auto; display:flex; flex-direction:column; gap:0.7rem;"></div>
+</section>
+
+<script type="module">
+  import { supabase } from './supabase-client.js';
+  const listEl = document.getElementById('thankyouList');
+  const subEl = document.getElementById('thankyouSubtext');
+  supabase.from('first_five_thankyou').select('name, paid_at').then(({ data, error }) => {
+    if (error || !data || data.length === 0){
+      subEl.textContent = 'Be one of our first 5 customers and get a free surprise steeeck with your order!';
+      listEl.innerHTML = '';
+      return;
+    }
+    const remaining = 5 - data.length;
+    subEl.textContent = remaining > 0
+      ? `${remaining} free-surprise spot${remaining === 1 ? '' : 's'} left \u2014 thank you to our first customers:`
+      : 'All 5 free-surprise spots are filled \u2014 thank you to our first customers!';
+    listEl.innerHTML = data.map(row => `
+      <div style="background:var(--parchment); border-radius:14px; padding:0.9rem 1.2rem; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-weight:600;">${row.name}</span>
+        <span style="color:var(--honey-bright); font-size:0.85rem;">Thank you for your purchase! 🎉</span>
+      </div>
+    `).join('');
+  });
+</script>
+
 <section class="explore" id="explore">
   <div class="section-head">
     <span class="eyebrow">Find Your Way Around</span>
