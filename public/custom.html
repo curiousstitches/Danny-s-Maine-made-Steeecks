@@ -213,6 +213,12 @@
         <span>I'm active duty military or a veteran (20% discount — I'll email a photo of my ID as proof)</span>
       </label>
 
+      <div class="form-field" id="promoField">
+        <label for="orderPromo">Promo code (optional)</label>
+        <input type="text" id="orderPromo" placeholder="Have a code? Enter it here" style="text-transform:uppercase;">
+        <p id="promoFeedback" style="font-size:0.82rem; margin-top:0.3rem;"></p>
+      </div>
+
       <label class="pay-confirm" style="justify-content:flex-start; margin-bottom:1.2rem;">
         <input type="checkbox" id="orderLiability" required>
         <span>I've read and accept the <a href="privacy.html" target="_blank" style="color:var(--honey-bright);">assumption of risk &amp; liability terms</a> — handmade wood products carry inherent risk, and Mr Steeeck cannot guarantee against injury, death, or damage from use.</span>
@@ -300,6 +306,35 @@
   import { supabase } from './supabase-client.js';
 
   window.addEventListener('DOMContentLoaded', () => {
+    const promoInput = document.getElementById('orderPromo');
+    const promoFeedback = document.getElementById('promoFeedback');
+    if (promoInput && promoFeedback){
+      promoInput.addEventListener('input', async () => {
+        const code = promoInput.value.trim().toUpperCase();
+        if (!code){
+          promoFeedback.textContent = '';
+          return;
+        }
+        if (code === 'FIRST5'){
+          const { data, error } = await supabase.from('first_five_thankyou').select('name');
+          const remaining = error || !data ? 5 : 5 - data.length;
+          if (remaining > 0){
+            promoFeedback.textContent = `\u{1F389} FIRST5 applied \u2014 you're eligible for a free surprise steeeck (${remaining} spot${remaining === 1 ? '' : 's'} left)!`;
+            promoFeedback.style.color = 'var(--honey-bright)';
+          } else {
+            promoFeedback.textContent = 'Sorry \u2014 all 5 free-surprise spots are already filled. Thanks for trying!';
+            promoFeedback.style.color = '#c2b39b';
+          }
+        } else if (code === 'FRIENDSTEEECK1'){
+          promoFeedback.textContent = '\u{1F389} FRIENDSTEEECK1 applied \u2014 10% off one item, on us for spreading the word!';
+          promoFeedback.style.color = 'var(--honey-bright)';
+        } else {
+          promoFeedback.textContent = 'Code not recognized \u2014 we\u2019ll still see it and can sort it out by email.';
+          promoFeedback.style.color = '#c2b39b';
+        }
+      });
+    }
+
     const emailedConfirm = document.getElementById('emailedConfirm');
     const payRow = document.getElementById('payRow');
     if (emailedConfirm && payRow){
@@ -421,6 +456,7 @@
         wood: isByo ? 'Customer-provided' : document.getElementById('orderWood').value,
         notes: notes,
         veteran_discount: document.getElementById('orderVeteran').checked,
+        promo_code: document.getElementById('orderPromo').value.trim().toUpperCase() || null,
         recipient: document.getElementById('dRecipient').value.trim() || null,
         height: document.getElementById('dHeight').value.trim() || null,
         purpose: document.getElementById('dPurpose').value || null,

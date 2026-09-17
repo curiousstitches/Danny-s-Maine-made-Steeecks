@@ -223,7 +223,7 @@
 
     <h2 style="font-family:'Fraunces', serif; font-size:1.3rem; margin-bottom:1rem; color:var(--walnut);">Order requests</h2>
     <table style="margin-bottom:2.6rem;">
-      <thead><tr><th>Name</th><th>Email</th><th>Size</th><th>Wood</th><th>Notes</th><th>Veteran?</th><th>Date</th><th>Payment</th><th></th></tr></thead>
+      <thead><tr><th>Name</th><th>Email</th><th>Size</th><th>Wood</th><th>Notes</th><th>Veteran?</th><th>Promo Code</th><th>Date</th><th>Payment</th><th></th></tr></thead>
       <tbody id="orderTableBody">
         <tr><td colspan="8">Loading…</td></tr>
       </tbody>
@@ -234,7 +234,7 @@
     <table style="margin-bottom:2.6rem;">
       <thead><tr><th>Ref Code</th><th>Wood</th><th>Bark %</th><th>Finish</th><th>Grip</th><th>Tip</th><th>Personalized</th><th>Est. Price</th><th>Date</th></tr></thead>
       <tbody id="savedDesignsBody">
-        <tr><td colspan="9">Loading…</td></tr>
+        <tr><td colspan="10">Loading…</td></tr>
       </tbody>
     </table>
 
@@ -319,7 +319,7 @@
 
     const { data: orders, count: orderCount } = await supabase
       .from('custom_orders')
-      .select('id, name, email, size, wood, notes, veteran_discount, created_at, recipient, height, purpose, bark_preference, bend_request, knots_limbs, wood_burning, finish_choice, grip_wrap, metal_tip, order_type, quoted_price, paid, paid_amount, paid_at', { count: 'exact' })
+      .select('id, name, email, size, wood, notes, veteran_discount, promo_code, created_at, recipient, height, purpose, bark_preference, bend_request, knots_limbs, wood_burning, finish_choice, grip_wrap, metal_tip, order_type, quoted_price, paid, paid_amount, paid_at', { count: 'exact' })
       .order('created_at', { ascending: false });
 
     const { data: savedDesigns } = await supabase
@@ -381,7 +381,7 @@
 
     const orderBody = document.getElementById('orderTableBody');
     if (!orders || orders.length === 0){
-      orderBody.innerHTML = '<tr><td colspan="9">No order requests yet.</td></tr>';
+      orderBody.innerHTML = '<tr><td colspan="10">No order requests yet.</td></tr>';
     } else {
       const detailFields = [
         ['recipient', 'Who for'], ['height', 'Height/Size'], ['purpose', 'Purpose'],
@@ -407,12 +407,13 @@
           <td>${o.wood}</td>
           <td>${o.notes || '—'}</td>
           <td>${o.veteran_discount ? '⭐ Yes' : '—'}</td>
+          <td>${o.promo_code ? `<strong style="color:var(--walnut);">${o.promo_code}</strong>` : '—'}</td>
           <td>${new Date(o.created_at).toLocaleDateString()}</td>
           <td>${paymentCell}</td>
           <td>${hasDetails ? `<button class="remove-number-btn" style="color:#4a7; border-color:#4a7;" onclick="document.getElementById('detail-${o.id}').classList.toggle('hidden')">Details</button>` : '—'}</td>
         </tr>
         <tr id="pay-${o.id}" class="hidden">
-          <td colspan="9" style="background:var(--parchment);">
+          <td colspan="10" style="background:var(--parchment);">
             <div style="display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap; padding:0.4rem 0;">
               <label style="font-size:0.82rem;">Quoted price
                 <input type="number" step="0.01" id="quote-${o.id}" value="${o.quoted_price || ''}" style="width:90px; margin-left:0.4rem; padding:0.3rem 0.5rem;">
@@ -427,7 +428,7 @@
             </div>
           </td>
         </tr>
-        ${hasDetails ? `<tr id="detail-${o.id}" class="hidden"><td colspan="9" style="background:var(--parchment); font-size:0.85rem;">${detailRows}${metalTipRow}</td></tr>` : ''}
+        ${hasDetails ? `<tr id="detail-${o.id}" class="hidden"><td colspan="10" style="background:var(--parchment); font-size:0.85rem;">${detailRows}${metalTipRow}</td></tr>` : ''}
       `;
       }).join('');
     }
