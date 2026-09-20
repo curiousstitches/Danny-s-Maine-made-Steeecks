@@ -269,8 +269,9 @@
         </div>
         <p class="paint-hint">Loads sensible defaults to start from — tweak anything after.</p>
       </div>
-      <h3>Or pick a wood directly</h3>
+      <h3>Hardwood or softwood?</h3>
       <div class="wood-swatches" id="woodSwatches"></div>
+      <p class="paint-hint">Exact species depends on what's on hand when your order comes in — every piece is real, one-of-a-kind wood, not a catalog pick. Want a specific species or your own found stick? <a href="custom.html#orderTypeByo" style="color:var(--honey-bright);">Send it in</a> and we'll cut, shape, and finish it for you.</p>
     </div>
 
     <div class="panel-drawer side-left" id="panel-paint">
@@ -435,14 +436,8 @@
   });
 
   const WOODS = [
-    { id: 'oak', name: 'Oak', bark: 'images/wood/bark-oak.webp', polishColor: 0xb8905a, available: true, category: 'hardwood' },
-    { id: 'maple', name: 'Maple', bark: 'images/wood/bark-maple.webp', polishColor: 0xe0c99a, available: true, category: 'hardwood' },
-    { id: 'birch', name: 'Birch', bark: 'images/wood/bark-birch.webp', polishColor: 0xe8d9b8, available: true, category: 'hardwood' },
-    { id: 'ash', name: 'Ash', bark: 'images/wood/bark-ash.webp', polishColor: 0xd4b98a, available: true, category: 'hardwood' },
-    { id: 'cherry', name: 'Cherry', bark: 'images/wood/bark-cherry.webp', polishColor: 0x8b4a3a, available: true, category: 'hardwood' },
-    { id: 'black-walnut', name: 'Black Walnut', bark: 'images/wood/bark-black-walnut.webp', polishColor: 0x3f2a1c, available: true, category: 'hardwood' },
-    { id: 'white-pine', name: 'White Pine', bark: 'images/wood/bark-white-pine.webp', polishColor: 0xe8dcc0, available: true, category: 'softwood' },
-    { id: 'eastern-white-cedar', name: 'Eastern White Cedar', bark: 'images/wood/bark-eastern-white-cedar.webp', polishColor: 0xb08050, available: true, category: 'softwood' },
+    { id: 'hardwood', name: 'Hardwood', bark: 'images/wood/bark-oak.webp', polishColor: 0xb8905a, available: true, category: 'hardwood' },
+    { id: 'softwood', name: 'Softwood', bark: 'images/wood/bark-white-pine.webp', polishColor: 0xe8dcc0, available: true, category: 'softwood' },
   ];
 
   const PAINT_SEGMENTS = 24;
