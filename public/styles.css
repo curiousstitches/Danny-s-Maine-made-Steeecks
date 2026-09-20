@@ -238,14 +238,46 @@
     text-align:center;
     padding:7rem 6vw 3.5rem;
     background:
-      radial-gradient(ellipse at 20% 10%, rgba(63,75,44,0.35) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 85%, rgba(74,46,30,0.4) 0%, transparent 55%),
-      linear-gradient(160deg, #0d0906 0%, #150f0a 45%, #0a0705 100%);
+      linear-gradient(180deg, rgba(8,5,3,0.72) 0%, rgba(8,5,3,0.5) 40%, rgba(8,5,3,0.78) 100%),
+      url('images/bg-oak-fire.webp') center 30% / cover no-repeat;
     color:var(--bone);
     overflow:hidden;
   }
   @media (max-width:880px){
     .hero{min-height:auto; padding:5.5rem 6vw 3.5rem;}
+  }
+  @media (max-width:600px){
+    .hero{background-image:
+      linear-gradient(180deg, rgba(8,5,3,0.72) 0%, rgba(8,5,3,0.5) 40%, rgba(8,5,3,0.78) 100%),
+      url('images/bg-oak-fire-mobile.webp');}
+  }
+
+  /* Living fire: animated flicker glow over the embers at the base of the photo */
+  .hero::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background:
+      radial-gradient(ellipse 70% 40% at 15% 100%, rgba(255,102,0,0.5) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 35% at 85% 100%, rgba(255,80,0,0.45) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 30% at 50% 100%, rgba(255,140,20,0.4) 0%, transparent 55%);
+    mix-blend-mode:screen;
+    animation:fireFlicker 2.6s ease-in-out infinite;
+  }
+  @keyframes fireFlicker{
+    0%{opacity:0.55;}
+    18%{opacity:0.85;}
+    32%{opacity:0.6;}
+    47%{opacity:0.95;}
+    61%{opacity:0.65;}
+    75%{opacity:0.8;}
+    88%{opacity:0.6;}
+    100%{opacity:0.55;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .hero::before{animation:none; opacity:0.7;}
   }
 
   /* The card: frosted glass panel that holds all hero copy */
