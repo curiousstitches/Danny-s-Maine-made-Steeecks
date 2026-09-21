@@ -102,7 +102,17 @@
     border-bottom:1px solid rgba(250,246,239,0.15);
   }
   #backBtn{background:none; border:none; color:var(--bone); font-size:1.3rem; cursor:pointer; padding:0.2rem 0.4rem;}
-  #threadName{font-weight:700; font-size:1rem;}
+  #threadName{font-weight:700; font-size:1rem; flex:1;}
+  #threadStatusBadge{
+    font-size:0.68rem; font-weight:700; padding:0.15rem 0.55rem; border-radius:10px;
+    text-transform:uppercase; letter-spacing:0.03em;
+  }
+  #threadStatusBadge.open{background:rgba(107,125,79,0.35); color:#a8c084;}
+  #threadStatusBadge.closed{background:rgba(250,246,239,0.12); color:rgba(250,246,239,0.55);}
+  #closeChatBtn{
+    background:rgba(201,75,62,0.2); color:#e08278; border:1px solid rgba(201,75,62,0.4);
+    border-radius:8px; padding:0.4rem 0.7rem; font-size:0.78rem; font-weight:600; cursor:pointer;
+  }
   #threadMessages{flex:1; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:0.6rem;}
   .msg{max-width:78%; padding:0.6rem 0.85rem; border-radius:12px; font-size:0.9rem; line-height:1.45;}
   .msg.customer{align-self:flex-start; background:rgba(250,246,239,0.12); border-bottom-left-radius:3px;}
@@ -220,6 +230,8 @@
       <div id="threadHeader">
         <button id="backBtn" aria-label="Back">&larr;</button>
         <div id="threadName">Select a chat</div>
+        <span id="threadStatusBadge" style="display:none;"></span>
+        <button id="closeChatBtn" type="button" style="display:none;">Close Chat</button>
       </div>
       <div id="threadMessages"></div>
       <form id="threadForm">
@@ -322,12 +334,30 @@
   async function openThread(sessionId, opts){
     opts = opts || {};
     currentSessionId = sessionId;
+    const badge = document.getElementById('threadStatusBadge');
+    const closeBtn = document.getElementById('closeChatBtn');
+    let sessionStatus = 'requested';
+
     if (opts.isMine){
       document.getElementById('threadName').textContent = 'Chat with Danny';
+      closeBtn.style.display = 'none';
+      const { data: myRow } = await supabase.from('chat_sessions').select('status').eq('session_id', sessionId).single();
+      sessionStatus = (myRow && myRow.status) || 'requested';
+      badge.style.display = 'inline-block';
+      badge.textContent = sessionStatus === 'closed' ? 'Closed' : 'Open';
+      badge.className = sessionStatus === 'closed' ? 'closed' : 'open';
     } else {
       const allSessions = [...sessionsCache.requested, ...sessionsCache.active];
       const s = allSessions.find(x => x.session_id === sessionId);
       document.getElementById('threadName').textContent = (s && s.customer_name) || 'Customer';
+      sessionStatus = (s && s.status) || 'requested';
+      badge.style.display = 'none';
+      closeBtn.style.display = 'inline-block';
+      closeBtn.onclick = async () => {
+        await supabase.from('chat_sessions').update({ status: 'closed' }).eq('session_id', sessionId);
+        closeThread();
+        loadSessions();
+      };
     }
     document.getElementById('threadView').classList.add('open');
     if (!opts.isMine) renderSessionList();
