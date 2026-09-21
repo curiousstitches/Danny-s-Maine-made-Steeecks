@@ -52,6 +52,17 @@
   #notifyBtn.granted{background:rgba(250,246,239,0.15); color:var(--bone);}
 
   .tabs{display:flex; border-bottom:1px solid rgba(250,246,239,0.15); background:rgba(20,14,9,0.4);}
+  .tab-select{
+    width:100%; padding:0.85rem 1rem; background:rgba(20,14,9,0.4); color:var(--bone);
+    border:none; border-bottom:1px solid rgba(250,246,239,0.15); font-size:0.95rem; font-weight:600;
+    font-family:inherit; -webkit-appearance:none; appearance:none;
+  }
+  @media (max-width:700px){
+    .tabs{display:none !important;}
+  }
+  @media (min-width:701px){
+    .tab-select{display:none !important;}
+  }
   .tab-btn{
     flex:1; padding:0.85rem; background:none; border:none; color:rgba(250,246,239,0.6);
     font-size:0.9rem; font-weight:600; cursor:pointer; position:relative;
@@ -219,6 +230,14 @@
     <button id="notifyBtn">Enable Notifications</button>
   </header>
 
+  <select id="adminTabSelect" class="tab-select" style="display:none;">
+    <option value="requested">Requested</option>
+    <option value="active">Chat Windows</option>
+    <option value="customers">Customers</option>
+    <option value="orders">Orders</option>
+    <option value="community">Community</option>
+  </select>
+
   <div class="tabs" id="adminTabs" style="display:none;">
     <button class="tab-btn active" data-tab="requested">Requested <span class="tab-count" id="countRequested" style="display:none;">0</span></button>
     <button class="tab-btn" data-tab="active">Chat Windows <span class="tab-count" id="countActive" style="display:none;">0</span></button>
@@ -226,6 +245,11 @@
     <button class="tab-btn" data-tab="orders">Orders <span class="tab-count" id="countOrders" style="display:none;">0</span></button>
     <button class="tab-btn" data-tab="community">Community</button>
   </div>
+
+  <select id="customerTabSelect" class="tab-select" style="display:none;">
+    <option value="mychat">My Chat</option>
+    <option value="community">Community</option>
+  </select>
 
   <div class="tabs" id="customerTabs" style="display:none;">
     <button class="tab-btn active" data-tab="mychat">My Chat</button>
@@ -455,33 +479,38 @@
     });
   });
 
+  function activateTab(tabName){
+    currentTab = tabName;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
+    document.getElementById('adminTabSelect').value = tabName;
+    document.getElementById('customerTabSelect').value = tabName;
+    document.getElementById('sessionListWrap').style.display = 'none';
+    document.getElementById('customerList').style.display = 'none';
+    document.getElementById('ordersList').style.display = 'none';
+    document.getElementById('communityView').classList.remove('open');
+    closeThread();
+    if (tabName === 'customers'){
+      document.getElementById('customerList').style.display = 'block';
+      loadCustomers();
+    } else if (tabName === 'orders'){
+      document.getElementById('ordersList').style.display = 'block';
+      loadOrders();
+    } else if (tabName === 'community'){
+      document.getElementById('communityView').classList.add('open');
+      loadCommunity();
+    } else if (tabName === 'mychat'){
+      loadMyChat();
+    } else {
+      document.getElementById('sessionListWrap').style.display = 'flex';
+      renderSessionList();
+    }
+  }
+
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentTab = btn.dataset.tab;
-      document.getElementById('sessionListWrap').style.display = 'none';
-      document.getElementById('customerList').style.display = 'none';
-      document.getElementById('ordersList').style.display = 'none';
-      document.getElementById('communityView').classList.remove('open');
-      closeThread();
-      if (currentTab === 'customers'){
-        document.getElementById('customerList').style.display = 'block';
-        loadCustomers();
-      } else if (currentTab === 'orders'){
-        document.getElementById('ordersList').style.display = 'block';
-        loadOrders();
-      } else if (currentTab === 'community'){
-        document.getElementById('communityView').classList.add('open');
-        loadCommunity();
-      } else if (currentTab === 'mychat'){
-        loadMyChat();
-      } else {
-        document.getElementById('sessionListWrap').style.display = 'flex';
-        renderSessionList();
-      }
-    });
+    btn.addEventListener('click', () => activateTab(btn.dataset.tab));
   });
+  document.getElementById('adminTabSelect').addEventListener('change', (e) => activateTab(e.target.value));
+  document.getElementById('customerTabSelect').addEventListener('change', (e) => activateTab(e.target.value));
 
   let communityChannel = null;
   async function loadCommunity(){
@@ -694,12 +723,14 @@
       isAdmin = true;
       adminEmail = session.user.email;
       document.getElementById('adminTabs').style.display = 'flex';
+      document.getElementById('adminTabSelect').style.display = 'block';
       await loadSessions();
       loadOrders();
       subscribeSessionUpdates();
     } else {
       isAdmin = false;
       document.getElementById('customerTabs').style.display = 'flex';
+      document.getElementById('customerTabSelect').style.display = 'block';
       myChatSessionId = getUserSessionId(session.user.id);
       // Make sure a session row exists so it shows up for the admin too, with the customer's real name.
       const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', session.user.id).single();
