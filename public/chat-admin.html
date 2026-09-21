@@ -66,7 +66,17 @@
   #main{flex:1; min-height:0; display:flex; overflow:hidden;}
 
   /* Session list */
-  #sessionList{width:100%; overflow-y:auto; flex-shrink:0;}
+  #sessionList{width:100%; overflow-y:auto; flex-shrink:0; flex:1;}
+  #catFilters{display:flex; gap:0.4rem; padding:0.6rem 0.8rem; overflow-x:auto; border-bottom:1px solid rgba(250,246,239,0.08);}
+  .chip{
+    background:rgba(250,246,239,0.08); border:1px solid rgba(250,246,239,0.15); color:rgba(250,246,239,0.7);
+    border-radius:14px; padding:0.3rem 0.75rem; font-size:0.76rem; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .chip.active{background:var(--honey-bright); color:var(--bark); border-color:var(--honey-bright);}
+  .cat-tag{
+    display:inline-block; font-size:0.68rem; font-weight:700; color:var(--honey-bright);
+    background:rgba(224,168,84,0.15); border-radius:8px; padding:0.1rem 0.45rem; margin:0.25rem 0 0.1rem;
+  }
   .session-item{
     display:block; width:100%; text-align:left; background:none; border:none;
     padding:0.9rem 1.2rem; border-bottom:1px solid rgba(250,246,239,0.08);
@@ -113,7 +123,7 @@
 
   @media (min-width:760px){
     #main{position:relative;}
-    #sessionList, #customerList, #ordersList{width:340px; border-right:1px solid rgba(250,246,239,0.15);}
+    #sessionListWrap, #customerList, #ordersList{width:340px; border-right:1px solid rgba(250,246,239,0.15);}
     #threadView{position:relative; width:auto; flex:1; display:flex;}
     #threadView:not(.open){align-items:center; justify-content:center;}
     #backBtn{display:none;}
@@ -190,7 +200,15 @@
   </div>
 
   <div id="main">
-    <div id="sessionList"></div>
+    <div id="sessionListWrap" style="width:100%; display:flex; flex-direction:column;">
+      <div id="catFilters">
+        <button class="chip active" data-cat="all">All</button>
+        <button class="chip" data-cat="question">Questions</button>
+        <button class="chip" data-cat="order">Order Talk</button>
+        <button class="chip" data-cat="feedback">Feedback</button>
+      </div>
+      <div id="sessionList"></div>
+    </div>
     <div id="customerList" style="display:none; width:100%; overflow-y:auto;"></div>
     <div id="ordersList" style="display:none; width:100%; overflow-y:auto;"></div>
 
@@ -243,8 +261,14 @@
     return Math.floor(hrs / 24) + 'd';
   }
 
+  const CATEGORY_LABELS = { question: 'Question', order: 'Order Talk', feedback: 'Feedback' };
+  let currentCategoryFilter = 'all';
+
   function renderSessionList(){
-    const list = sessionsCache[currentTab];
+    let list = sessionsCache[currentTab] || [];
+    if (currentCategoryFilter !== 'all'){
+      list = list.filter(s => s.category === currentCategoryFilter);
+    }
     const el = document.getElementById('sessionList');
     if (!list || list.length === 0){
       el.innerHTML = '<div id="emptyState">' + (currentTab === 'requested' ? "No new chat requests right now." : "No active chat windows yet.") + '</div>';
@@ -253,6 +277,7 @@
     el.innerHTML = list.map(s => `
       <button class="session-item ${s.session_id === currentSessionId ? 'selected' : ''}" data-session="${s.session_id}">
         <div class="sname">${s.customer_name || 'Customer'} <span class="stime">${timeAgo(s.last_message_at)}</span></div>
+        ${s.category ? `<span class="cat-tag">${CATEGORY_LABELS[s.category] || s.category}</span>` : ''}
         <div class="spreview">${s.last_message_sender === 'admin' ? 'You: ' : ''}${(s.last_message_preview || '').replace(/</g,'&lt;')}</div>
       </button>
     `).join('');
@@ -273,7 +298,7 @@
   async function loadSessions(){
     const { data } = await supabase
       .from('chat_sessions')
-      .select('session_id, customer_name, status, last_message_at, last_message_preview, last_message_sender')
+      .select('session_id, customer_name, status, category, last_message_at, last_message_preview, last_message_sender')
       .order('last_message_at', { ascending: false });
     sessionsCache.requested = (data || []).filter(s => s.status === 'requested');
     sessionsCache.active = (data || []).filter(s => s.status === 'active');
@@ -342,12 +367,21 @@
     });
   });
 
+  document.querySelectorAll('#catFilters .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#catFilters .chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentCategoryFilter = chip.dataset.cat;
+      renderSessionList();
+    });
+  });
+
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentTab = btn.dataset.tab;
-      document.getElementById('sessionList').style.display = 'none';
+      document.getElementById('sessionListWrap').style.display = 'none';
       document.getElementById('customerList').style.display = 'none';
       document.getElementById('ordersList').style.display = 'none';
       closeThread();
@@ -358,7 +392,7 @@
         document.getElementById('ordersList').style.display = 'block';
         loadOrders();
       } else {
-        document.getElementById('sessionList').style.display = 'block';
+        document.getElementById('sessionListWrap').style.display = 'flex';
         renderSessionList();
       }
     });

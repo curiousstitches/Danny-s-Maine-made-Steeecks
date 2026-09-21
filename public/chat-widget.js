@@ -14,6 +14,12 @@ function getSavedName(){
   return localStorage.getItem('steeeck_chat_name') || '';
 }
 
+function getSavedCategory(){
+  return localStorage.getItem('steeeck_chat_category') || '';
+}
+
+const CATEGORY_LABELS = { question: 'General Question', order: 'Order Talk', feedback: 'Feedback' };
+
 const sessionId = getSessionId();
 
 const styleTag = document.createElement('style');
@@ -28,6 +34,28 @@ styleTag.textContent = `
     transition:transform 0.2s ease;
   }
   #steeeckChatBubble:hover{transform:scale(1.06);}
+  #steeeckChatNotice{
+    position:fixed; bottom:26px; right:86px; z-index:199;
+    background:#241a13; color:#f1e7d3; font-family:'Work Sans', sans-serif;
+    font-size:0.72rem; font-weight:600; padding:0.4rem 0.7rem; border-radius:8px;
+    white-space:nowrap; box-shadow:0 6px 16px rgba(0,0,0,0.3);
+    display:flex; align-items:center; gap:0.35rem;
+  }
+  #steeeckChatNotice::after{
+    content:''; position:absolute; right:-5px; top:50%; transform:translateY(-50%);
+    border:5px solid transparent; border-left-color:#241a13;
+  }
+  @media (max-width:480px){
+    #steeeckChatNotice{font-size:0.66rem; right:80px; padding:0.35rem 0.6rem;}
+  }
+  #steeeckChatCategories{padding:1rem; font-size:0.85rem;}
+  #steeeckChatCategories p{margin-bottom:0.8rem; line-height:1.4;}
+  #steeeckChatCategories .cat-btn{
+    display:block; width:100%; text-align:left; background:#fff; border:1px solid #d8c6a2;
+    border-radius:8px; padding:0.7rem 0.9rem; margin-bottom:0.55rem; font-size:0.88rem;
+    font-weight:600; color:#3a2818; cursor:pointer;
+  }
+  #steeeckChatCategories .cat-btn:hover{background:#f1e7d3;}
   #steeeckChatPanel{
     position:fixed; bottom:90px; right:20px; z-index:200;
     width:min(340px, 88vw); max-height:70vh;
@@ -76,6 +104,11 @@ bubble.id = 'steeeckChatBubble';
 bubble.setAttribute('aria-label', 'Open live chat');
 bubble.textContent = '💬';
 document.body.appendChild(bubble);
+
+const notice = document.createElement('div');
+notice.id = 'steeeckChatNotice';
+notice.innerHTML = '\u{1F514} Danny is notified personally';
+document.body.appendChild(notice);
 
 const panel = document.createElement('div');
 panel.id = 'steeeckChatPanel';
@@ -145,6 +178,40 @@ async function sendMessage(text, name){
   });
 }
 
+function showCategoryPicker(){
+  messagesEl.style.display = 'none';
+  formEl.style.display = 'none';
+  const prompt = document.createElement('div');
+  prompt.id = 'steeeckChatCategories';
+  prompt.innerHTML = `
+    <p>Hey ${getSavedName()}! What can we help with?</p>
+    <button class="cat-btn" data-cat="question">\u2753 General Question</button>
+    <button class="cat-btn" data-cat="order">\u{1F4E6} Order Talk</button>
+    <button class="cat-btn" data-cat="feedback">\u{1F4AC} Feedback</button>
+  `;
+  panel.insertBefore(prompt, formEl);
+  prompt.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const cat = btn.dataset.cat;
+      localStorage.setItem('steeeck_chat_category', cat);
+      prompt.remove();
+      messagesEl.style.display = 'flex';
+      formEl.style.display = 'flex';
+      await supabase.from('chat_sessions').upsert({
+        session_id: sessionId,
+        customer_name: getSavedName(),
+        category: cat,
+        status: 'requested',
+        last_message_at: new Date().toISOString(),
+        last_message_preview: 'Started a ' + CATEGORY_LABELS[cat] + ' chat',
+        last_message_sender: 'customer'
+      }, { onConflict: 'session_id' });
+      loadHistory();
+      subscribeRealtime();
+    });
+  });
+}
+
 function openPanel(){
   panel.classList.add('open');
   const savedName = getSavedName();
@@ -164,11 +231,15 @@ function openPanel(){
       if (!val) return;
       localStorage.setItem('steeeck_chat_name', val);
       prompt.remove();
-      messagesEl.style.display = 'flex';
-      formEl.style.display = 'flex';
-      loadHistory();
-      subscribeRealtime();
+      if (getSavedCategory()){
+        loadHistory();
+        subscribeRealtime();
+      } else {
+        showCategoryPicker();
+      }
     });
+  } else if (!getSavedCategory()){
+    showCategoryPicker();
   } else {
     loadHistory();
     subscribeRealtime();
@@ -177,9 +248,17 @@ function openPanel(){
 
 bubble.addEventListener('click', () => {
   panel.classList.toggle('open');
-  if (panel.classList.contains('open')) openPanel();
+  if (panel.classList.contains('open')){
+    notice.style.display = 'none';
+    openPanel();
+  } else {
+    notice.style.display = 'flex';
+  }
 });
-document.getElementById('steeeckChatClose').addEventListener('click', () => panel.classList.remove('open'));
+document.getElementById('steeeckChatClose').addEventListener('click', () => {
+  panel.classList.remove('open');
+  notice.style.display = 'flex';
+});
 
 formEl.addEventListener('submit', (e) => e.preventDefault());
 sendBtn.addEventListener('click', () => {
