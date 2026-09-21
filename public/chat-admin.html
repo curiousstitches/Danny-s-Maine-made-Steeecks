@@ -132,6 +132,15 @@
   }
   #communityView{display:none;}
   #communityView.open{display:flex;}
+  #guideView{
+    display:none; width:100%; overflow-y:auto; padding:1.4rem 1.5rem 3rem; line-height:1.55;
+  }
+  #guideView.open{display:block;}
+  #guideView h2{font-family:'Fraunces', serif; color:var(--honey-bright); font-size:1.3rem; margin-bottom:0.3rem;}
+  #guideView .sub{font-size:0.85rem; opacity:0.7; margin-bottom:1.2rem;}
+  #guideView h3{color:var(--honey-bright); font-size:1rem; margin:1.3rem 0 0.5rem;}
+  #guideView ul{padding-left:1.2rem;}
+  #guideView li{margin-bottom:0.5rem; font-size:0.9rem;}
   #communityOnline{
     padding:0.6rem 1rem; font-size:0.75rem; opacity:0.7; border-bottom:1px solid rgba(250,246,239,0.1);
   }
@@ -249,6 +258,7 @@
     <option value="customers">Customers</option>
     <option value="orders">Orders</option>
     <option value="community">Community</option>
+    <option value="guide">Craft Guide</option>
   </select>
 
   <div class="tabs" id="adminTabs" style="display:none;">
@@ -257,6 +267,7 @@
     <button class="tab-btn" data-tab="customers">Customers</button>
     <button class="tab-btn" data-tab="orders">Orders <span class="tab-count" id="countOrders" style="display:none;">0</span></button>
     <button class="tab-btn" data-tab="community">Community</button>
+    <button class="tab-btn" data-tab="guide">Craft Guide</button>
   </div>
 
   <select id="customerTabSelect" class="tab-select" style="display:none;">
@@ -288,6 +299,65 @@
         <input type="text" id="communityInput" placeholder="Say something to the community…" autocomplete="off" maxlength="500">
         <button type="submit">Send</button>
       </form>
+    </div>
+
+    <div id="guideView">
+      <h2>Craft Guide \u2014 Prevent Mold, Every Piece</h2>
+      <p class="sub">Your own reference. Follow this in order on every piece, bark-on especially \u2014 this is what actually stops the mold problem, not the finish coat alone.</p>
+
+      <h3>1. Dry it before you touch a finish</h3>
+      <ul>
+        <li>Green wood off your own property holds a lot of internal moisture \u2014 that's the root cause of mold, not bad luck.</li>
+        <li>Stand pieces somewhere dry and ventilated, off the ground, not stacked touching each other. Not direct sun (cracks it), not a closed damp space (defeats the point).</li>
+        <li>Bark-on pieces need longer \u2014 bark holds moisture far longer than the wood underneath it.</li>
+        <li>Rough guide: thin staffs/sticks (1\u20132" diameter) often need several weeks to a couple months with good airflow. Thicker pieces need longer. Don't guess \u2014 test it (next step).</li>
+      </ul>
+
+      <h3>2. Test moisture content \u2014 don't eyeball it</h3>
+      <ul>
+        <li>Get a pin-style wood moisture meter (~$20\u201330, one-time buy, pays for itself instantly).</li>
+        <li>Test before finishing every piece. Target under 15\u201320%, ideally closer to 8\u201312%.</li>
+        <li>If it's still high, it needs more dry time \u2014 no shortcuts here, this is the step that actually prevents mold.</li>
+      </ul>
+
+      <h3>3. Clean the surface</h3>
+      <ul>
+        <li>Brush or wipe off loose bark, dirt, and any insect debris before treating.</li>
+      </ul>
+
+      <h3>4. Treat with a borate preservative</h3>
+      <ul>
+        <li>This is the actual mold/fungus/insect defense \u2014 apply it before any sealer, not instead of drying.</li>
+        <li>Options: a borax/water solution (cheap, DIY), or a commercial product like Tim-bor or Bora-Care (sold at hardware stores or online, easy to apply with a brush or spray).</li>
+        <li>Let it fully absorb and dry per the product's label before moving on.</li>
+      </ul>
+
+      <h3>5. Let it dry again after treatment</h3>
+      <ul>
+        <li>Don't rush straight to finishing \u2014 give the borate treatment time to fully dry first.</li>
+      </ul>
+
+      <h3>6. Apply the finish</h3>
+      <ul>
+        <li>For durability and moisture/mold resistance: <strong>spar urethane</strong> is the standard choice for outdoor wood pieces like walking sticks \u2014 built for UV and moisture exposure.</li>
+        <li>For a more natural look: a penetrating oil (Danish oil, tung oil) with a mildewcide additive mixed in \u2014 sold separately at most hardware/marine supply stores, a small amount goes a long way.</li>
+        <li>Either way, the borate step above is doing the actual mold-prevention work \u2014 the top coat is durability and looks.</li>
+      </ul>
+
+      <h3>7. Cure it right</h3>
+      <ul>
+        <li>Full cure time per the finish label, in a dry ventilated space \u2014 never sealed in plastic or a closed box right after finishing.</li>
+        <li>Only package/ship once it's fully cured.</li>
+      </ul>
+
+      <h3>Quick checklist per piece</h3>
+      <ul>
+        <li>\u2610 Dried to target moisture (checked with meter, not guessed)</li>
+        <li>\u2610 Surface cleaned</li>
+        <li>\u2610 Borate-treated and re-dried</li>
+        <li>\u2610 Finish applied</li>
+        <li>\u2610 Fully cured before packaging</li>
+      </ul>
     </div>
 
     <div id="threadView">
@@ -512,6 +582,7 @@
     document.getElementById('customerList').style.display = 'none';
     document.getElementById('ordersList').style.display = 'none';
     document.getElementById('communityView').classList.remove('open');
+    document.getElementById('guideView').classList.remove('open');
     closeThread();
     if (tabName === 'customers'){
       document.getElementById('customerList').style.display = 'block';
@@ -522,6 +593,8 @@
     } else if (tabName === 'community'){
       document.getElementById('communityView').classList.add('open');
       loadCommunity();
+    } else if (tabName === 'guide'){
+      document.getElementById('guideView').classList.add('open');
     } else if (tabName === 'mychat'){
       loadMyChat();
     } else {

@@ -36,8 +36,8 @@ if (!sessionStorage.getItem('steeeck_chat_announce_dismissed')){
   const bar = document.createElement('div');
   bar.id = 'steeeckAnnounce';
   bar.innerHTML = `
-    \u{1F4F2} <strong>Steeecks Chat is here!</strong> Message Danny directly and install it like a real app on your phone or PC.
-    A members' community chat room is live now \u2014 <strong>no purchase necessary</strong>, just sign up free.
+    \u{1F4F2} <strong>Don't miss this \u2014 Steeecks Chat is live!</strong> Message Danny directly, join the members' community room, and install it right on your home screen like a real app.
+    You can install <strong>this whole website</strong> too, for one-tap access anytime \u2014 <strong>no purchase necessary</strong>, just sign up free.
     <a href="chat-admin.html">Open Steeecks Chat &rarr;</a>
     <button id="steeeckAnnounceClose" aria-label="Dismiss">&times;</button>
   `;

@@ -45,7 +45,7 @@
   <div class="section-head">
     <span class="eyebrow">The Work</span>
     <h2>Gallery</h2>
-    <p>Real finished pieces, each one-of-a-kind — for adults, kids, pets, and babies alike. Tap a photo to see more. Some shown here are examples of past work rather than current stock; ask about availability.</p>
+    <p>A look at real, finished work — not a stock list to browse and buy. Every piece here is either already sold or kept as an example, one-of-a-kind and never remade the same way twice. Want your own? <a href="custom.html" style="color:var(--honey-bright);">Start a custom order</a> and we'll build it just for you.</p>
     <p style="font-size:0.85rem; color:#8a7960; margin-top:0.3rem;">No two are the same, ayuh. That's not a disclaimer, that's the whole point.</p>
   </div>
 
@@ -105,9 +105,7 @@
           </label>
           <label>Status
             <select id="editStatus">
-              <option value="ask">Ask about availability</option>
-              <option value="available">Available</option>
-              <option value="priced">Priced</option>
+              <option value="not_for_sale">Not for Sale (portfolio piece)</option>
               <option value="sold">Sold</option>
             </select>
           </label>
@@ -162,9 +160,7 @@
         </label>
         <label>Status
           <select id="newItemStatus">
-            <option value="ask">Ask about availability</option>
-            <option value="available">Available</option>
-            <option value="priced">Priced</option>
+            <option value="not_for_sale">Not for Sale (portfolio piece)</option>
             <option value="sold">Sold</option>
           </select>
         </label>
@@ -244,9 +240,8 @@
   }
 
   function statusLabel(item){
-    if (item.status === 'sold') return 'Sold';
-    if (item.status === 'priced') return item.price ? item.price : 'Priced';
-    if (item.status === 'available') return 'Available';
+    if (item.status === 'sold') return item.price ? 'Sold \u2014 ' + item.price : 'Sold';
+    return 'Not for Sale';
     return 'Ask about availability';
   }
 
@@ -265,7 +260,7 @@
       card.className = 'gallery-card has-photo';
       card.dataset.category = item.category;
       card.dataset.id = item.id;
-      const statusClass = item.status === 'sold' ? 'sold' : (item.status === 'priced' ? 'priced' : '');
+      const statusClass = item.status === 'sold' ? 'sold' : 'notforsale';
       const photoCount = (item.image_paths && item.image_paths.length) || (item.image_path ? 1 : 0);
       const mediaBadge = (photoCount > 1 || item.video_path)
         ? `<div class="media-badge">${photoCount > 1 ? `📷 ${photoCount}` : ''}${photoCount > 1 && item.video_path ? ' · ' : ''}${item.video_path ? '🎬' : ''}</div>`
@@ -459,15 +454,15 @@
     modalCategory.textContent = CATEGORY_LABELS[item.category] || item.category;
     modalDesc.textContent = item.description || 'No description yet.';
     modalStatus.textContent = statusLabel(item);
-    modalStatus.className = 'modal-status ' + (item.status === 'sold' ? 'sold' : (item.status === 'priced' ? 'priced' : ''));
+    modalStatus.className = 'modal-status ' + (item.status === 'sold' ? 'sold' : 'notforsale');
 
     if (isAdmin){
       adminControls.hidden = false;
       editName.value = item.name;
       editDesc.value = item.description || '';
-      editStatus.value = item.status || 'ask';
+      editStatus.value = item.status || 'not_for_sale';
       editPrice.value = item.price || '';
-      editPriceWrap.hidden = editStatus.value !== 'priced';
+      editPriceWrap.hidden = editStatus.value !== 'sold';
       renderEditThumbs(item);
       editVideoFile.value = '';
       saveMsg.textContent = '';
@@ -491,7 +486,7 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !overlay.hidden) closeModal(); });
 
   editStatus.addEventListener('change', () => {
-    editPriceWrap.hidden = editStatus.value !== 'priced';
+    editPriceWrap.hidden = editStatus.value !== 'sold';
   });
 
   async function resizeImageFile(file, maxDim = 1400, quality = 0.75){
@@ -557,7 +552,7 @@
         name: editName.value.trim(),
         description: editDesc.value.trim(),
         status: editStatus.value,
-        price: editStatus.value === 'priced' ? editPrice.value.trim() : null,
+        price: editStatus.value === 'sold' ? editPrice.value.trim() : null,
         image_paths: finalPaths,
         image_path: finalPaths[0],
         video_path: videoPath
@@ -603,7 +598,7 @@
     newItemName.value = '';
     newItemCategory.value = 'walking-stick';
     newItemDesc.value = '';
-    newItemStatus.value = 'ask';
+    newItemStatus.value = 'not_for_sale';
     newItemPrice.value = '';
     newItemPriceWrap.hidden = true;
     createMsg.textContent = '';
@@ -622,7 +617,7 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !addOverlay.hidden) closeAddModal(); });
 
   newItemStatus.addEventListener('change', () => {
-    newItemPriceWrap.hidden = newItemStatus.value !== 'priced';
+    newItemPriceWrap.hidden = newItemStatus.value !== 'sold';
   });
 
   createItemBtn.addEventListener('click', async () => {
@@ -666,7 +661,7 @@
           video_path: videoPath,
           description: newItemDesc.value.trim(),
           status: newItemStatus.value,
-          price: newItemStatus.value === 'priced' ? newItemPrice.value.trim() : null,
+          price: newItemStatus.value === 'sold' ? newItemPrice.value.trim() : null,
           sort_order: maxSort + 1
         })
         .select()
