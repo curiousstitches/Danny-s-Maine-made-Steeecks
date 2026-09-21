@@ -53,9 +53,11 @@
 
   .tabs{display:flex; border-bottom:1px solid rgba(250,246,239,0.15); background:rgba(20,14,9,0.4);}
   .tab-select{
-    width:100%; padding:0.85rem 1rem; background:rgba(20,14,9,0.4); color:var(--bone);
+    width:100%; padding:0.85rem 2.4rem 0.85rem 1rem; background:rgba(20,14,9,0.4); color:var(--bone);
     border:none; border-bottom:1px solid rgba(250,246,239,0.15); font-size:0.95rem; font-weight:600;
     font-family:inherit; -webkit-appearance:none; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%23e0a854' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 1rem center;
   }
   @media (max-width:700px){
     .tabs{display:none !important;}
@@ -95,6 +97,10 @@
   }
   .session-item:active, .session-item.selected{background:rgba(224,168,84,0.12);}
   .session-item .sname{font-weight:600; font-size:0.95rem; display:flex; justify-content:space-between;}
+  .unread-dot{
+    display:inline-block; width:8px; height:8px; border-radius:50%; background:#c94b3e;
+    margin-right:0.4rem; vertical-align:middle;
+  }
   .session-item .stime{font-size:0.72rem; opacity:0.55; font-weight:400;}
   .session-item .spreview{font-size:0.83rem; opacity:0.75; margin-top:0.2rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   #emptyState{padding:2.5rem 1.5rem; text-align:center; opacity:0.6; font-size:0.9rem;}
@@ -124,6 +130,7 @@
     background:rgba(201,75,62,0.2); color:#e08278; border:1px solid rgba(201,75,62,0.4);
     border-radius:8px; padding:0.4rem 0.7rem; font-size:0.78rem; font-weight:600; cursor:pointer;
   }
+  #communityView{display:none;}
   #communityView.open{display:flex;}
   #communityOnline{
     padding:0.6rem 1rem; font-size:0.75rem; opacity:0.7; border-bottom:1px solid rgba(250,246,239,0.1);
@@ -132,6 +139,11 @@
   .cmsg{max-width:80%; padding:0.55rem 0.8rem; border-radius:10px; font-size:0.87rem; line-height:1.4;}
   .cmsg .cname{font-size:0.7rem; font-weight:700; color:var(--honey-bright); margin-bottom:0.15rem;}
   .cmsg{align-self:flex-start; background:rgba(250,246,239,0.1);}
+  .cmsg.owner{background:rgba(224,168,84,0.18); border:1px solid rgba(224,168,84,0.35);}
+  .owner-badge{
+    background:var(--honey-bright); color:var(--bark); font-size:0.6rem; font-weight:800;
+    padding:0.05rem 0.35rem; border-radius:6px; text-transform:uppercase; vertical-align:middle;
+  }
   #communityForm{display:flex; gap:0.6rem; padding:0.8rem; border-top:1px solid rgba(250,246,239,0.15);}
   #communityInput{
     flex:1; padding:0.7rem 0.9rem; border-radius:20px; border:1px solid rgba(250,246,239,0.25);
@@ -145,6 +157,7 @@
   .msg{max-width:78%; padding:0.6rem 0.85rem; border-radius:12px; font-size:0.9rem; line-height:1.45;}
   .msg.customer{align-self:flex-start; background:rgba(250,246,239,0.12); border-bottom-left-radius:3px;}
   .msg.admin{align-self:flex-end; background:var(--honey-bright); color:var(--bark); border-bottom-right-radius:3px;}
+  .msg-time{font-size:0.66rem; opacity:0.6; margin-top:0.2rem;}
   #threadForm{
     display:flex; gap:0.6rem; padding:0.8rem; border-top:1px solid rgba(250,246,239,0.15);
     padding-bottom:calc(0.8rem + env(safe-area-inset-bottom, 0px));
@@ -268,11 +281,11 @@
     </div>
     <div id="customerList" style="display:none; width:100%; overflow-y:auto;"></div>
     <div id="ordersList" style="display:none; width:100%; overflow-y:auto;"></div>
-    <div id="communityView" style="display:none; flex-direction:column; width:100%; height:100%;">
+    <div id="communityView" style="flex-direction:column; width:100%; height:100%;">
       <div id="communityOnline"></div>
       <div id="communityMessages"></div>
       <form id="communityForm">
-        <input type="text" id="communityInput" placeholder="Say something to the community…" autocomplete="off">
+        <input type="text" id="communityInput" placeholder="Say something to the community…" autocomplete="off" maxlength="500">
         <button type="submit">Send</button>
       </form>
     </div>
@@ -286,7 +299,7 @@
       </div>
       <div id="threadMessages"></div>
       <form id="threadForm">
-        <input type="text" id="threadInput" placeholder="Type a reply…" autocomplete="off">
+        <input type="text" id="threadInput" placeholder="Type a reply…" autocomplete="off" maxlength="1000">
         <button type="submit" id="threadSend">Send</button>
       </form>
     </div>
@@ -342,13 +355,16 @@
       el.innerHTML = '<div id="emptyState">' + (currentTab === 'requested' ? "No new chat requests right now." : "No active chat windows yet.") + '</div>';
       return;
     }
-    el.innerHTML = list.map(s => `
+    el.innerHTML = list.map(s => {
+      const isUnread = s.last_message_sender === 'customer' && (!s.admin_last_read_at || new Date(s.last_message_at) > new Date(s.admin_last_read_at));
+      return `
       <button class="session-item ${s.session_id === currentSessionId ? 'selected' : ''}" data-session="${s.session_id}">
-        <div class="sname">${s.customer_name || 'Customer'} <span class="stime">${timeAgo(s.last_message_at)}</span></div>
+        <div class="sname">${isUnread ? '<span class="unread-dot"></span>' : ''}${s.customer_name || 'Customer'} <span class="stime">${timeAgo(s.last_message_at)}</span></div>
         ${s.category ? `<span class="cat-tag">${CATEGORY_LABELS[s.category] || s.category}</span>` : ''}
         <div class="spreview">${s.last_message_sender === 'admin' ? 'You: ' : ''}${(s.last_message_preview || '').replace(/</g,'&lt;')}</div>
       </button>
-    `).join('');
+    `;
+    }).join('');
     el.querySelectorAll('.session-item').forEach(btn => {
       btn.addEventListener('click', () => openThread(btn.dataset.session));
     });
@@ -366,7 +382,7 @@
   async function loadSessions(){
     const { data } = await supabase
       .from('chat_sessions')
-      .select('session_id, customer_name, status, category, last_message_at, last_message_preview, last_message_sender')
+      .select('session_id, customer_name, status, category, last_message_at, last_message_preview, last_message_sender, admin_last_read_at')
       .order('last_message_at', { ascending: false });
     sessionsCache.requested = (data || []).filter(s => s.status === 'requested');
     sessionsCache.active = (data || []).filter(s => s.status === 'active');
@@ -378,7 +394,15 @@
     const div = document.createElement('div');
     const isMine = isAdmin ? (m.sender === 'admin') : (m.sender === 'customer');
     div.className = 'msg ' + (isMine ? 'admin' : 'customer');
-    div.textContent = m.message;
+    const textSpan = document.createElement('div');
+    textSpan.textContent = m.message;
+    div.appendChild(textSpan);
+    if (m.created_at){
+      const timeSpan = document.createElement('div');
+      timeSpan.className = 'msg-time';
+      timeSpan.textContent = new Date(m.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      div.appendChild(timeSpan);
+    }
     document.getElementById('threadMessages').appendChild(div);
   }
 
@@ -463,7 +487,7 @@
     input.value = '';
     const sender = isAdmin ? 'admin' : 'customer';
     const senderName = isAdmin ? 'Danny' : myName;
-    renderMessage({ sender, message: text });
+    renderMessage({ sender, message: text, created_at: new Date().toISOString() });
     document.getElementById('threadMessages').scrollTop = 999999;
     await supabase.from('chat_messages').insert({
       session_id: currentSessionId, sender, name: senderName, message: text
@@ -513,6 +537,16 @@
   document.getElementById('customerTabSelect').addEventListener('change', (e) => activateTab(e.target.value));
 
   let communityChannel = null;
+  function communityMsgHtml(m){
+    const isOwner = m.display_name === 'Danny';
+    const time = m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+    return `<div class="cmsg${isOwner ? ' owner' : ''}">
+      <div class="cname">${(m.display_name || 'Someone').replace(/</g,'&lt;')}${isOwner ? ' <span class="owner-badge">Owner</span>' : ''}</div>
+      <div>${(m.message || '').replace(/</g,'&lt;')}</div>
+      ${time ? `<div class="msg-time">${time}</div>` : ''}
+    </div>`;
+  }
+
   async function loadCommunity(){
     const { data } = await supabase
       .from('community_messages')
@@ -520,17 +554,14 @@
       .order('created_at', { ascending: true })
       .limit(200);
     const el = document.getElementById('communityMessages');
-    el.innerHTML = (data || []).map(m => `
-      <div class="cmsg"><div class="cname">${(m.display_name || 'Someone').replace(/</g,'&lt;')}</div>${(m.message || '').replace(/</g,'&lt;')}</div>
-    `).join('');
+    el.innerHTML = (data || []).map(communityMsgHtml).join('');
     el.scrollTop = el.scrollHeight;
 
     if (communityChannel) supabase.removeChannel(communityChannel);
     communityChannel = supabase.channel('community_room', { config: { presence: { key: adminEmail || myName || 'guest' } } });
     communityChannel
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'community_messages' }, (payload) => {
-        const m = payload.new;
-        el.insertAdjacentHTML('beforeend', `<div class="cmsg"><div class="cname">${(m.display_name || 'Someone').replace(/</g,'&lt;')}</div>${(m.message || '').replace(/</g,'&lt;')}</div>`);
+        el.insertAdjacentHTML('beforeend', communityMsgHtml(payload.new));
         el.scrollTop = el.scrollHeight;
       })
       .on('presence', { event: 'sync' }, () => {
