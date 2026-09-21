@@ -113,11 +113,25 @@
 
   @media (min-width:760px){
     #main{position:relative;}
-    #sessionList, #customerList{width:340px; border-right:1px solid rgba(250,246,239,0.15);}
+    #sessionList, #customerList, #ordersList{width:340px; border-right:1px solid rgba(250,246,239,0.15);}
     #threadView{position:relative; width:auto; flex:1; display:flex;}
     #threadView:not(.open){align-items:center; justify-content:center;}
     #backBtn{display:none;}
   }
+
+  /* Orders */
+  .order-card{
+    padding:0.9rem 1.2rem; border-bottom:1px solid rgba(250,246,239,0.08);
+  }
+  .order-card .oname{font-weight:600; font-size:0.95rem; display:flex; justify-content:space-between; align-items:center;}
+  .order-card .odetail{font-size:0.82rem; opacity:0.75; margin-top:0.25rem; line-height:1.5;}
+  .order-card .oprice{color:var(--honey-bright); font-weight:600;}
+  .status-badge{
+    font-size:0.7rem; font-weight:700; padding:0.15rem 0.55rem; border-radius:10px;
+    text-transform:uppercase; letter-spacing:0.03em; border:none; cursor:pointer;
+  }
+  .status-badge.processing{background:rgba(224,168,84,0.25); color:var(--honey-bright);}
+  .status-badge.complete{background:rgba(107,125,79,0.35); color:#a8c084;}
 
   /* Customer list */
   .customer-item{
@@ -172,11 +186,13 @@
     <button class="tab-btn active" data-tab="requested">Requested <span class="tab-count" id="countRequested" style="display:none;">0</span></button>
     <button class="tab-btn" data-tab="active">Chat Windows <span class="tab-count" id="countActive" style="display:none;">0</span></button>
     <button class="tab-btn" data-tab="customers">Customers</button>
+    <button class="tab-btn" data-tab="orders">Orders <span class="tab-count" id="countOrders" style="display:none;">0</span></button>
   </div>
 
   <div id="main">
     <div id="sessionList"></div>
     <div id="customerList" style="display:none; width:100%; overflow-y:auto;"></div>
+    <div id="ordersList" style="display:none; width:100%; overflow-y:auto;"></div>
 
     <div id="threadView">
       <div id="threadHeader">
@@ -331,18 +347,66 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentTab = btn.dataset.tab;
+      document.getElementById('sessionList').style.display = 'none';
+      document.getElementById('customerList').style.display = 'none';
+      document.getElementById('ordersList').style.display = 'none';
+      closeThread();
       if (currentTab === 'customers'){
-        document.getElementById('sessionList').style.display = 'none';
         document.getElementById('customerList').style.display = 'block';
-        closeThread();
         loadCustomers();
+      } else if (currentTab === 'orders'){
+        document.getElementById('ordersList').style.display = 'block';
+        loadOrders();
       } else {
         document.getElementById('sessionList').style.display = 'block';
-        document.getElementById('customerList').style.display = 'none';
         renderSessionList();
       }
     });
   });
+
+  async function loadOrders(){
+    const { data } = await supabase
+      .from('custom_orders')
+      .select('id, name, wood, size, quoted_price, fulfillment_status, paid, created_at')
+      .order('created_at', { ascending: false });
+    const el = document.getElementById('ordersList');
+    if (!data || data.length === 0){
+      el.innerHTML = '<div id="emptyState">No orders yet.</div>';
+      updateOrderCount(0);
+      return;
+    }
+    updateOrderCount(data.filter(o => o.fulfillment_status === 'processing').length);
+    el.innerHTML = data.map(o => `
+      <div class="order-card" data-id="${o.id}">
+        <div class="oname">
+          ${o.name || 'Customer'}
+          <button class="status-badge ${o.fulfillment_status}" data-id="${o.id}" data-status="${o.fulfillment_status}">${o.fulfillment_status}</button>
+        </div>
+        <div class="odetail">
+          ${o.wood || ''} ${o.size ? '\u00b7 ' + o.size : ''}${o.quoted_price ? ' \u00b7 <span class="oprice">$' + o.quoted_price + '</span>' : ''}${o.paid ? ' \u00b7 Paid' : ''}<br>
+          ${new Date(o.created_at).toLocaleDateString()}
+        </div>
+      </div>
+    `).join('');
+    el.querySelectorAll('.status-badge').forEach(btn => {
+      btn.addEventListener('click', () => toggleOrderStatus(btn));
+    });
+  }
+
+  function updateOrderCount(n){
+    const c = document.getElementById('countOrders');
+    c.textContent = n; c.style.display = n > 0 ? 'inline-block' : 'none';
+  }
+
+  async function toggleOrderStatus(btn){
+    const id = btn.dataset.id;
+    const newStatus = btn.dataset.status === 'processing' ? 'complete' : 'processing';
+    btn.textContent = newStatus;
+    btn.dataset.status = newStatus;
+    btn.className = 'status-badge ' + newStatus;
+    await supabase.from('custom_orders').update({ fulfillment_status: newStatus }).eq('id', id);
+    loadOrders();
+  }
 
   async function loadCustomers(){
     const { data } = await supabase
@@ -447,6 +511,7 @@
     gate.style.display = 'none';
     app.classList.add('ready');
     await loadSessions();
+    loadOrders();
     subscribeSessionUpdates();
     setupPush();
   }
