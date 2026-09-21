@@ -180,9 +180,9 @@
 <body>
 
 <div id="gate">
-  <div>
-    <p>This page is only for the site owner.</p>
-    <p style="margin-top:1rem;"><a href="auth.html">Log in</a> with the admin account to view it.</p>
+  <div id="gateContent">
+    <p>Log in to use Steeecks Chat.</p>
+    <p style="margin-top:1rem;"><a href="auth.html">Log in</a> to continue.</p>
   </div>
 </div>
 
@@ -192,11 +192,15 @@
     <button id="notifyBtn">Enable Notifications</button>
   </header>
 
-  <div class="tabs">
+  <div class="tabs" id="adminTabs" style="display:none;">
     <button class="tab-btn active" data-tab="requested">Requested <span class="tab-count" id="countRequested" style="display:none;">0</span></button>
     <button class="tab-btn" data-tab="active">Chat Windows <span class="tab-count" id="countActive" style="display:none;">0</span></button>
     <button class="tab-btn" data-tab="customers">Customers</button>
     <button class="tab-btn" data-tab="orders">Orders <span class="tab-count" id="countOrders" style="display:none;">0</span></button>
+  </div>
+
+  <div class="tabs" id="customerTabs" style="display:none;">
+    <button class="tab-btn active" data-tab="mychat">My Chat</button>
   </div>
 
   <div id="main">
@@ -246,6 +250,7 @@
   const gate = document.getElementById('gate');
   const app = document.getElementById('app');
   let adminEmail = null;
+  let myName = null;
   let currentTab = 'requested';
   let currentSessionId = null;
   let sessionsCache = { requested: [], active: [] };
@@ -308,18 +313,24 @@
 
   function renderMessage(m){
     const div = document.createElement('div');
-    div.className = 'msg ' + (m.sender === 'admin' ? 'admin' : 'customer');
+    const isMine = isAdmin ? (m.sender === 'admin') : (m.sender === 'customer');
+    div.className = 'msg ' + (isMine ? 'admin' : 'customer');
     div.textContent = m.message;
     document.getElementById('threadMessages').appendChild(div);
   }
 
-  async function openThread(sessionId){
+  async function openThread(sessionId, opts){
+    opts = opts || {};
     currentSessionId = sessionId;
-    const allSessions = [...sessionsCache.requested, ...sessionsCache.active];
-    const s = allSessions.find(x => x.session_id === sessionId);
-    document.getElementById('threadName').textContent = (s && s.customer_name) || 'Customer';
+    if (opts.isMine){
+      document.getElementById('threadName').textContent = 'Chat with Danny';
+    } else {
+      const allSessions = [...sessionsCache.requested, ...sessionsCache.active];
+      const s = allSessions.find(x => x.session_id === sessionId);
+      document.getElementById('threadName').textContent = (s && s.customer_name) || 'Customer';
+    }
     document.getElementById('threadView').classList.add('open');
-    renderSessionList();
+    if (!opts.isMine) renderSessionList();
 
     const { data } = await supabase
       .from('chat_messages')
@@ -328,17 +339,26 @@
       .order('created_at', { ascending: true });
     const msgsEl = document.getElementById('threadMessages');
     msgsEl.innerHTML = '';
+    if (opts.isMine && (!data || data.length === 0)){
+      const welcome = document.createElement('div');
+      welcome.className = 'msg admin';
+      welcome.textContent = "Hey! Send a message and we'll get back to you as soon as we can.";
+      msgsEl.appendChild(welcome);
+    }
     (data || []).forEach(renderMessage);
     msgsEl.scrollTop = msgsEl.scrollHeight;
 
-    // Mark session read/active if it wasn't already (opening it counts as engaging)
-    await supabase.from('chat_sessions').update({ admin_last_read_at: new Date().toISOString() }).eq('session_id', sessionId);
+    if (!opts.isMine){
+      // Mark session read/active if it wasn't already (opening it counts as engaging)
+      await supabase.from('chat_sessions').update({ admin_last_read_at: new Date().toISOString() }).eq('session_id', sessionId);
+    }
 
     if (messageChannel) supabase.removeChannel(messageChannel);
+    const watchSender = opts.isMine ? 'admin' : 'customer';
     messageChannel = supabase
       .channel('thread_' + sessionId)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${sessionId}` }, (payload) => {
-        if (payload.new.sender === 'customer' && payload.new.session_id === currentSessionId){
+        if (payload.new.sender === watchSender && payload.new.session_id === currentSessionId){
           renderMessage(payload.new);
           msgsEl.scrollTop = msgsEl.scrollHeight;
         }
@@ -360,10 +380,12 @@
     const text = input.value.trim();
     if (!text || !currentSessionId) return;
     input.value = '';
-    renderMessage({ sender: 'admin', message: text });
+    const sender = isAdmin ? 'admin' : 'customer';
+    const senderName = isAdmin ? 'Danny' : myName;
+    renderMessage({ sender, message: text });
     document.getElementById('threadMessages').scrollTop = 999999;
     await supabase.from('chat_messages').insert({
-      session_id: currentSessionId, sender: 'admin', name: 'Danny', message: text
+      session_id: currentSessionId, sender, name: senderName, message: text
     });
   });
 
@@ -536,17 +558,47 @@
       .subscribe();
   }
 
+  let isAdmin = false;
+  let myChatSessionId = null;
+
+  function getUserSessionId(userId){
+    return 'user_' + userId;
+  }
+
+  async function loadMyChat(){
+    document.getElementById('backBtn').style.display = 'none';
+    await openThread(myChatSessionId, { isMine: true });
+  }
+
   async function init(){
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session || !ADMIN_EMAILS.includes(session.user.email)){
+    if (!session){
       return;
     }
-    adminEmail = session.user.email;
     gate.style.display = 'none';
     app.classList.add('ready');
-    await loadSessions();
-    loadOrders();
-    subscribeSessionUpdates();
+
+    if (ADMIN_EMAILS.includes(session.user.email)){
+      isAdmin = true;
+      adminEmail = session.user.email;
+      document.getElementById('adminTabs').style.display = 'flex';
+      await loadSessions();
+      loadOrders();
+      subscribeSessionUpdates();
+    } else {
+      isAdmin = false;
+      document.getElementById('customerTabs').style.display = 'flex';
+      myChatSessionId = getUserSessionId(session.user.id);
+      // Make sure a session row exists so it shows up for the admin too, with the customer's real name.
+      const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', session.user.id).single();
+      myName = profile?.display_name || session.user.email;
+      await supabase.from('chat_sessions').upsert({
+        session_id: myChatSessionId,
+        customer_name: myName,
+        user_id: session.user.id,
+      }, { onConflict: 'session_id', ignoreDuplicates: true });
+      await loadMyChat();
+    }
     setupPush();
   }
 
