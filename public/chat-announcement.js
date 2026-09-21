@@ -37,7 +37,7 @@ if (!sessionStorage.getItem('steeeck_chat_announce_dismissed')){
   bar.id = 'steeeckAnnounce';
   bar.innerHTML = `
     \u{1F4F2} <strong>Steeecks Chat is here!</strong> Message Danny directly and install it like a real app on your phone or PC.
-    A members' community chat room is coming very soon \u2014 <strong>no purchase necessary</strong>, just sign up free.
+    A members' community chat room is live now \u2014 <strong>no purchase necessary</strong>, just sign up free.
     <a href="chat-admin.html">Open Steeecks Chat &rarr;</a>
     <button id="steeeckAnnounceClose" aria-label="Dismiss">&times;</button>
   `;
