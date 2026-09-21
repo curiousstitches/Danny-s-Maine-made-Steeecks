@@ -372,6 +372,7 @@
 
 <script type="module">
   import { supabase, ADMIN_EMAILS } from './supabase-client.js';
+  import { checkUnreadMessages } from './user-messages.js';
 
   let currentUser = null;
 
@@ -395,6 +396,7 @@
     } else {
       authSlot.innerHTML = '<a href="profile.html">My Profile</a>';
     }
+    checkUnreadMessages(session.user.id);
   });
 
   window.__saveDesignToSupabase = async function(payload){

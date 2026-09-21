@@ -268,6 +268,7 @@
 </footer>
 <script type="module">
   import { supabase, ADMIN_EMAILS } from './supabase-client.js';
+  import { checkUnreadMessages } from './user-messages.js';
 
   // Log this visit (fire and forget)
   supabase.from('site_visits').insert({ page: 'order' }).then(() => {});
@@ -300,6 +301,7 @@
     } else if (session){
       if (authSlot) authSlot.innerHTML = '<a href="profile.html">My Profile</a>';
     }
+    checkUnreadMessages(session.user.id);
   });
 </script>
 <script type="module">
