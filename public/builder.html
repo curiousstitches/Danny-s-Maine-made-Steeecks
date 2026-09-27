@@ -354,7 +354,7 @@
       <button class="panel-close" data-close-panel>&times;</button>
       <h2>Order</h2>
       <div class="price-estimate">
-        <div class="amount" id="priceEstimate">$40–$55</div>
+        <div class="amount" id="priceEstimate">$50–$60</div>
         <div class="note">Rough estimate only — final pricing confirmed by email.</div>
       </div>
       <div class="builder-actions">
@@ -856,8 +856,8 @@
 
   // ===== Price estimate =====
   function updatePrice(){
-    let low = state.wood.category === 'softwood' ? 40 : 70;
-    let high = state.wood.category === 'softwood' ? 45 : 75;
+    let low = 50;
+    let high = 60;
     if (state.length > 60) { low += 5; high += 8; }
     if (state.grip !== 'none'){ low += 6; high += 10; }
     if (state.tip){ low += 5; high += 8; }
