@@ -93,7 +93,7 @@
         <h3 id="modalName">—</h3>
         <p class="modal-category" id="modalCategory"></p>
         <p class="modal-desc" id="modalDesc"></p>
-        <div class="modal-status" id="modalStatus"></div>
+        <div class="modal-status" id="modalStatus"></div><a href="custom.html" class="modal-cta-link" style="display:inline-block; margin-top:0.6rem; color:var(--honey-bright); font-weight:600; text-decoration:none;">Order a piece like this &rarr;</a>
 
         <div id="modalAdminControls" class="modal-admin" hidden>
           <div class="admin-divider">Admin — visible only to you</div>
@@ -241,8 +241,7 @@
 
   function statusLabel(item){
     if (item.status === 'sold') return item.price ? 'Sold \u2014 ' + item.price : 'Sold';
-    return 'Not for Sale';
-    return 'Ask about availability';
+    return 'One of a Kind — Order Yours';
   }
 
   function firstPhoto(item){
